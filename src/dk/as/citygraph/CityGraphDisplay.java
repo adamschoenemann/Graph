@@ -93,7 +93,7 @@ class GraphView extends JPanel {
 	}
 
 	public CityProblem.Solution search(){
-		CityProblem.Solution solution = (CityProblem.Solution) search.breadthFirstSearch(problem);
+		CityProblem.Solution solution = (CityProblem.Solution) search.breadthFirstSearchst(problem);
 		CityProblem.State init = (CityProblem.State) problem.getInitialState();
 		CityProblem.State goal = (CityProblem.State) problem.getGoalState();
 
@@ -126,6 +126,7 @@ class GraphView extends JPanel {
 		}
 		return null;
 	}
+
 
 }
 
