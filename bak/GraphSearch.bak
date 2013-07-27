@@ -1,0 +1,238 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
+
+public class GraphSearch {
+
+	private List<City> exploredList;
+	private Queue<City> frontier;
+
+	class Data {
+
+		public City state;
+		public int action;
+		public int pathCost;
+
+		public Data(City c, int a, int cost){
+			state = c;
+			action = a;
+			pathCost = cost;
+		}
+
+		public String toString(){
+			return String.format("Data[%s, %s, %s]", state, action, pathCost);
+		}
+
+	}
+	
+	public NNode<Data> uniformCostSearch(City start, City goal) {
+		NNode<Data> tree = new NNode<Data>(new Data(start, -1, 0), null);
+		Queue<NNode<Data>> pqueue = new PriorityQueue<NNode<Data>>(11,
+			new Comparator<NNode<Data>>(){
+				@Override
+				public int compare(NNode<Data> a, NNode<Data> b){
+					return a.getData().pathCost - b.getData().pathCost;
+				}
+			}
+		);
+		
+		Set<City> exploredStates = new HashSet<City>();
+		pqueue.add(tree);
+		while (pqueue.isEmpty() == false) {
+			tree = pqueue.remove();
+			Data data = tree.getData();
+			City state = data.state;
+			exploredStates.add(state);
+			if(state == goal){
+				return tree;
+			}
+			for (int i = 0; i < state.numEdges(); i++) {
+				Road r = state.getEdges().get(i);
+				City nextState = r.getNot(state);
+
+				if(!exploredStates.contains(nextState)){
+					NNode<Data> inFrontier = GraphSearch.containsState(nextState, pqueue);
+					NNode<Data> newNode = new NNode<Data>(new Data(r.getNot(state), i, data.pathCost + r.getCost()), null);
+					if(inFrontier != null && inFrontier.getData().pathCost > newNode.getData().pathCost){
+						pqueue.remove(inFrontier);
+					}
+					tree.add(newNode);
+					pqueue.add(newNode);	
+				}
+			}
+		}
+		
+		return null;
+	}
+
+
+	public static NNode<Data> containsState(City state, Queue<NNode<Data>> q){
+		for (NNode<Data> node : q) {
+			if(node.getData().state.equals(state)){
+				return node;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * @TODO Make changes to accomodate changes to NNode<Data> instead of NNode<City>
+	 * @param  start [description]
+	 * @param  goal  [description]
+	 * @return       [description]
+	 */
+	public NNode<Data> breadthFirstSearch(City start, City goal){
+		NNode<Data> tree = new NNode<Data>(new Data(start, -1, 0), null);
+		Queue<NNode<Data>> queue = new LinkedList<NNode<Data>>();
+		Set<City> explored = new HashSet<City>();
+		queue.add(tree);
+		while(queue.isEmpty() == false){
+			tree = queue.remove();
+			City state = tree.getData().state;
+			explored.add(state);
+			
+			if(state == goal){
+				return tree;
+			}
+			
+			int i = 0;
+			for (Road r : state.getEdges()) {
+				City child = r.getHead();
+				if(child == state){
+					child = r.getTail();
+				}
+				if(explored.contains(child) == false && GraphSearch.containsState(child, queue) == null){
+					queue.add(tree.add(new Data(child, i, tree.getData().pathCost + r.getCost())));
+				}
+				i++;
+			}
+
+		}
+		return null;
+	}
+
+	public NNode<City> treeBreadthFirst(City start){
+		NNode<City> tree = new NNode<City>(start, null);
+		Queue<NNode<City>> queue = new LinkedList<NNode<City>>();
+		queue.add(tree);
+		while(queue.isEmpty() == false){
+			tree = queue.remove();
+			City node = tree.getData();
+			System.out.println("Node added: " + node);
+			for (Road r : node.getEdges()) {
+				City child = r.getHead();
+				if(child == node){
+					child = r.getTail();
+				}
+				if(tree.getRoot().containsData(child) == false){
+					queue.add(tree.add(child));
+				}
+			}
+
+		}
+		return tree;
+	}
+
+	public int depthFirst(City state, City goal){
+		exploredList = new ArrayList<City>();
+		frontier = new LinkedList<City>();
+		Counter c = new Counter();
+		depthFirst(state, goal, c);
+		System.out.println("PathCost: " + c.getCount());
+		for(City v : exploredList){
+			System.out.println(v.getName());
+		}
+		return c.getCount();
+	}
+
+	private boolean depthFirst(City state, City goal, Counter c){
+		exploredList.add(state);
+		if(state == goal){
+			return true;
+		}
+		List<Road> roads = state.getEdges();
+		for (int i = 0; i < roads.size(); i++) {
+			Road r = roads.get(i);
+			City child = r.getHead();
+			if(child == state){
+				child = r.getTail();
+			}
+			if(exploredList.contains(child) == false){
+				c.increment(r.getCost());
+				if(depthFirst(child, goal, c) == true){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public List<City> getExplored(){
+		return exploredList;
+	}
+
+	public Queue<City> getFrontier(){
+		return frontier;
+	}
+
+	public static void main(String[] args) {
+		CityGraph graph = CityGraph.testGraph()	;
+		GraphSearch gs = new GraphSearch();
+		City arad = graph.getVertex(0), bucharest = graph.getVertex(12);
+		// NNode<Data> tree = gs.uniformCostSearch(arad, bucharest);
+		NNode<Data> tree = gs.breadthFirstSearch(arad, bucharest);
+		List<NNode<Data>> path = tree.getPathToAncestor(tree.getRoot());
+		for (NNode<Data> node : path) {
+			System.out.println(node);
+		}
+
+		City city = arad;
+		// With reverse
+		Collections.reverse(path);
+		for (int i = 1; i < path.size(); i++) {
+			System.out.println(city);
+			city = city.getEdges().get(
+				path.get(i).getData().action
+				).getNot(city);
+		}
+
+		// Without reverse
+		// for(int i = path.size() - 2; i >= 0; i--){
+		// 	System.out.println(city);
+		// 	city = city.getEdges()
+		// 		.get(path.get(i).getData().action)
+		// 		.getNot(city);
+		// }
+		System.out.println(city);
+
+		
+	}
+
+}
+
+class Counter {
+
+	private int count;
+
+	public Counter(){
+		count = 0;
+	}
+
+	public Counter(int v){
+		count = v;
+	}
+
+	public void increment(int v){
+		count += v;
+	}
+
+	public int getCount(){
+		return count;
+	}
+}

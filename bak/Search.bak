@@ -1,0 +1,254 @@
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+
+public class Search {
+	
+	// Be very careful with HashSets and equals and hashCode
+	// Produces some verrrry strange bugs
+	public Solution breadthFirstSearch(Problem problem){
+		Node node = new Node(problem.initialState,
+			problem.stepCost(problem.initialState, null));
+		Set<State> explored = new HashSet<State>();
+		Queue<Node> frontier = new LinkedList<Node>();
+		frontier.add(node);
+		while(!frontier.isEmpty()) {
+			node = frontier.remove();
+			explored.add(node.state);
+
+			if(problem.goalTest(node.state)){
+				return new Solution(problem, node);
+			}
+			
+			for (Action action : problem.getActions(node.state)) {
+				Node child = node.makeChild(problem, node, action);
+				if(explored.contains(child.state) == false && frontier.contains(node) == false){
+					frontier.add(child);
+					node.addChild(child);
+				}
+			}
+		}
+
+		return null;
+	}
+
+	public static void main(String[] args) {
+		CityGraph graph = CityGraph.testGraph();
+
+		class CityState extends State {
+			private City data;
+
+			public CityState(City data){
+				this.data = data;
+			}
+
+			@Override
+			public City getData(){
+				return data;
+			}
+
+			@Override
+			public boolean equals(Object other){
+				if(other == null || !(other instanceof CityState))
+					return false;
+				if(other == this)
+					return true;
+				if(hashCode() == ((CityState) other).hashCode()){
+					return  true;
+				}
+				return false;
+			}
+
+			@Override
+			public int hashCode(){
+				return getData().getName().hashCode();
+			}
+		}
+
+		class PathAction implements Action {
+			public int direction;
+			public PathAction(int direction){
+				this.direction = direction;
+			}
+
+			public State act(State state){
+				CityState cityState = (CityState) state;
+				City from = cityState.getData();
+				City to = cityState.getData().getEdges().get(direction).getNot(from);
+				return new CityState(to);
+			}
+		}
+
+		class PathCost implements Cost {
+			public int length;
+			public PathCost(int len){
+				this.length = len;
+			}
+
+			@Override
+			public PathCost add(Cost cost){
+				return new PathCost(length + ((PathCost) cost).length);
+			}
+		}
+
+		class PathProblem extends Problem {
+
+			public PathProblem(CityState start, CityState goal){
+				super(start, goal);
+			}
+
+			@Override
+			public List<Action> getActions(State state){
+		 		City city = (City) state.getData();
+		 		List<Action> actions = new LinkedList<Action>();
+		 		int i = 0;
+		 		for (Road road : city.getEdges()) {
+		 			actions.add(new PathAction(i));
+		 			i++;
+		 		}
+		 		return actions;
+			}
+
+			@Override
+			public State result(State state, Action action){
+				return action.act(state);
+			}
+
+			@Override
+			public Cost stepCost(State state, Action action){
+				if(state.equals(initialState)){
+					return new PathCost(0);
+				}
+				CityState cityState = (CityState) state;	
+				City city = cityState.getData();
+				PathAction pathAction = (PathAction) action;
+				return new PathCost(city.getEdges().get(pathAction.direction).getCost());
+			}
+
+		}
+
+		PathProblem pathProblem = new PathProblem(new CityState(graph.getVertex(0)), 
+				new CityState(graph.getVertex(12)));
+		Search search = new Search();
+		Solution solution = search.breadthFirstSearch(pathProblem);
+		Node node = solution.node;
+		System.out.println(node.getRoot().print());
+		/*while(node != null){
+			System.out.println(node.state);
+			node = node.parent;
+		}*/
+	}
+
+}
+
+interface Action {
+	public State act(State state);
+}
+
+abstract class State {
+	public abstract Object getData();
+	public String toString(){
+		return getData().toString();
+	}
+}
+
+abstract class Problem {
+
+	public State initialState;
+	public State goalState;
+
+	public Problem(State init, State goal){
+		initialState = init;
+		goalState = goal;
+	}
+
+	public boolean goalTest(State state){
+		if(state.equals(goalState)){
+			return true;
+		}
+		return false;
+	}
+
+	public abstract List<Action> getActions(State state);
+	public abstract State result(State state, Action action);
+	public abstract Cost stepCost(State state, Action action);
+
+}
+
+class Solution {
+	public Problem problem;
+	public Node node;
+
+	public Solution(Problem problem, Node node){
+		this.problem = problem;
+		this.node = node;
+	}
+}
+
+interface Cost {
+	public Cost add(Cost a);
+}
+
+class Node {
+
+	public State state;
+	public Action action;
+	public Cost pathCost;
+
+	public List<Node> children;
+	public Node parent = null;
+
+	public Node(State state, Cost pathCost){
+		this.state = state;
+		this.pathCost = pathCost;
+		this.children = new LinkedList<Node>();
+	}
+
+	public Node makeChild(Problem problem, Node parent, Action action){
+		Node child = new Node(
+			problem.result(parent.state, action),
+			parent.pathCost.add(problem.stepCost(parent.state, action))
+		);
+		return child;
+	}
+
+	public Node addChild(Node child){
+		child.setParent(this);
+		children.add(child);
+		return child;
+	}
+
+	public Node getRoot(){
+		Node node = this;
+		while(node.parent != null){
+			node = node.parent;
+		}
+		return node;
+	}
+
+	public int numChildren() {	return children.size();	}
+	public Node getChildAt(int p) { return children.get(p); }
+	public void setParent(Node parent) { this.parent = parent; }
+
+	public String print() {
+		StringBuilder sb = new StringBuilder();
+		this.print(sb, 0);
+		return sb.toString();
+	}
+
+	public void print(StringBuilder sb, int level){
+		for (int i = 0; i < level - 1; i++) {
+			sb.append("   ");
+		}
+		if(level > 0){
+			sb.append("`--");
+		}
+		sb.append(String.valueOf(state)).append("\n");
+		for (int i = 0; i < numChildren(); i++) {
+			getChildAt(i).print(sb, level + 1);
+		}
+	}
+}

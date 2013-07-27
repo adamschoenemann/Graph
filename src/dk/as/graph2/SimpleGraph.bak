@@ -1,0 +1,91 @@
+package dk.as.graph2;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+public class SimpleGraph<T> implements Graph {
+	
+	private List<Graph.Vertex> vertices = new ArrayList<Graph.Vertex>();
+	private List<Graph.Edge> edges = new ArrayList<Graph.Edge>();
+
+	@Override public Graph.Vertex getVertex(int i) { return getVertices().get(i); }
+	@Override public Graph.Edge getEdge(int i) { return getEdges().get(i); }
+	@Override public int numVertices() { return getVertices().size(); }
+	@Override public int numEdges() { return getEdges().size(); }
+	@Override public void addVertex(Graph.Vertex v) { getVertices().add((Vertex<T>) v);}
+	protected List<Graph.Vertex> getVertices() { return vertices; }
+	protected List<Graph.Edge> getEdges() { return edges; }
+
+	public SimpleGraph add(T data){
+		getVertices().add(new Vertex<T>(data));
+		return this;
+	}
+
+	@Override
+	public Graph.Edge connect(Graph.Vertex a, Graph.Vertex b){
+		Graph.Edge edge = a.connect(b);
+		getEdges().add(edge);
+		return edge;
+	}
+
+	public Graph.Edge connect(int a, int b){
+		return connect(getVertex(a), getVertex(b));
+	}
+
+	public static void main(String[] args) {
+		SimpleGraph graph = new SimpleGraph();
+		graph
+			.add("A")
+			.add("B")
+			.add("C")
+			.add("D")
+			.add("E");
+
+		graph.connect(0, 1);
+		graph.connect(0, 2);
+		graph.connect(0, 3);
+		graph.connect(2, 4);
+		graph.connect(1, 4);
+		
+	}
+
+	class Vertex<T> implements Graph.Vertex {
+		private final List<Graph.Edge> edges;
+		private T data;
+		public Vertex(T data){
+			edges = new LinkedList<Graph.Edge>();
+			this.data = data;
+		}
+
+		@Override public List<Graph.Edge> getEdges(){ return edges; }
+		@Override public int numEdges(){ return edges.size(); }
+		@Override public Graph.Edge connect(Graph.Vertex other){
+			Edge edge = new Edge(this, (Vertex) other);
+			getEdges().add(edge);
+			other.getEdges().add(edge);
+			return edge;
+		}
+
+		public T getData(){
+			return data;
+		}
+	}
+
+	class Edge implements Graph.Edge {
+		private final Vertex head, tail;
+
+		public Edge(Vertex t, Vertex h){
+			head = h;
+			tail = t;
+		}
+
+		@Override public Graph.Vertex getHead(){ return head; }
+		@Override public Graph.Vertex getTail(){ return tail; }
+		@Override public Graph.Vertex getNot(Graph.Vertex not){
+			Graph.Vertex ret = getHead();
+			return ret.equals(not) ? tail : head;
+		}
+	}
+
+}
