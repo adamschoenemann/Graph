@@ -8,6 +8,15 @@ public abstract class Problem {
 	public State initialState;
 	public State goalState;
 
+	public abstract List<Action> getActions(State state);
+	public abstract State result(State state, Action action);
+	public abstract Cost stepCost(State state, Action action);
+	public void setInitialState(State init) {	initialState = init; }
+	public State getInitialState() { return initialState;	}
+	public void setGoalState(State goal) { goalState = goal;}
+	public State getGoalState() {	return goalState;	}
+
+	// --------------------- ACTION --------------------------------------- //
 	public static interface Action {
 
 		public State act(State state);
@@ -15,6 +24,7 @@ public abstract class Problem {
 
 	}
 
+	// --------------------- STATE --------------------------------------- //
 	public abstract class State {
 
 		public abstract Object getData();
@@ -22,6 +32,7 @@ public abstract class Problem {
 
 	}
 
+	// --------------------- SOLUTION --------------------------------------- //
 	public class Solution {
 
 		private Problem problem;
@@ -47,6 +58,7 @@ public abstract class Problem {
 
 	} 
 
+	// --------------------- COST --------------------------------------- //
 	public interface Cost extends Comparable<Cost> {
 		public Cost add(Cost a);
 		public Object get();
@@ -59,13 +71,7 @@ public abstract class Problem {
 		return false;
 	}
 
-	public abstract List<Action> getActions(State state);
-	public abstract State result(State state, Action action);
-	public abstract Cost stepCost(State state, Action action);
-	public void setInitialState(State init) {	initialState = init; }
-	public State getInitialState() { return initialState;	}
-	public void setGoalState(State goal) { goalState = goal;}
-	public State getGoalState() {	return goalState;	}
+
 
 }
 
