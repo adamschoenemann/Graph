@@ -5,7 +5,7 @@ import java.util.PriorityQueue;
 public class Frontier<T extends Node> extends PriorityQueue<T> {
 
 	public Frontier() {
-		super(11,
+		this(
 			new Comparator<T>() {
 				@Override
 				public int compare(T a, T b) {
@@ -13,6 +13,10 @@ public class Frontier<T extends Node> extends PriorityQueue<T> {
 				}
 			}
 		);
+	}
+
+	public Frontier(Comparator<T> comp){
+		super(11, comp);
 	}
 
 	@Override

@@ -11,6 +11,7 @@ public abstract class Problem {
 	public abstract List<Action> getActions(State state);
 	public abstract State result(State state, Action action);
 	public abstract Cost stepCost(State state, Action action);
+	public abstract Cost heurestic(State a, State b);
 	public void setInitialState(State init) {	initialState = init; }
 	public State getInitialState() { return initialState;	}
 	public void setGoalState(State goal) { goalState = goal;}

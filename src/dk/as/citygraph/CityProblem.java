@@ -35,22 +35,43 @@ public class CityProblem extends Problem {
 		return new Cost(city.getEdges().get(pathAction.direction).getData());
 	}
 
+	@Override
+	public Problem.Cost heurestic(Problem.State a, Problem.State b){
+		State aState = (State) a;
+		State bState = (State) b;
+		City aCity = aState.getCity();
+		City bCity = bState.getCity();
+
+		if(aCity.equals(bCity)){
+			return new Cost(0);
+		}
+
+		double distance = Math.sqrt(
+			Math.pow(bCity.getX() - aCity.getX(), 2) + Math.pow(bCity.getY() - aCity.getY(), 2)
+		);
+
+		return new Cost(distance);
+	}
 
 	public static void main(String[] args) {
 		CityGraph graph = CityGraph.romania();
 
 		CityProblem cityProblem = new CityProblem();
 		CityGraph.Vertex arad = graph.getVertex(0);
+		CityGraph.Vertex oradea = graph.getVertexByName("Craiova");
 		CityGraph.Vertex bucharest = graph.getVertex(12);
 
 		System.out.println("initial: " + arad);
 		System.out.println("goal: " + bucharest);
 
-		cityProblem.setInitialState(cityProblem.new State(arad));
+		// cityProblem.setInitialState(cityProblem.new State(arad));
+		cityProblem.setInitialState(cityProblem.new State(oradea));
 		cityProblem.setGoalState(cityProblem.new State(bucharest));
 
 		Search search = new Search();
 
+		// ---------------- BreadFirstSearch -------------------------------------------//
+		System.out.println("=========================== BreadthFirstSearch ==========================");
 		CityProblem.Solution solution = search.breadthFirstSearch(cityProblem);
 		Node node = solution.getNode();
 		System.out.println(node.getRoot().print());
@@ -60,10 +81,26 @@ public class CityProblem extends Problem {
 			System.out.println(node.getState() + " Action: " + node.getAction());
 			node = node.getParent();
 		}
-		System.out.println();
-		System.out.println();
 
+		System.out.println();
+		System.out.println();
+		// ---------------- UniformCostSearch -------------------------------------------//
+		System.out.println("=========================== UniformCostSearch ===========================");
 		solution = search.uniformCostSearch(cityProblem);
+		node = solution.getNode();
+		System.out.println("pathCost: " + node.getPathCost().get());
+		System.out.println("Actions: " + solution.getActions());
+		System.out.println(node.getRoot().print());
+		while(node != null){
+			System.out.println(node.getState() + " Action: " + node.getAction());
+			node = node.getParent();
+		}
+
+		System.out.println();
+		System.out.println();
+		// ---------------- AStarSearch -------------------------------------------//
+		System.out.println("=========================== AStarSearch =================================");
+		solution = search.aStarSearch(cityProblem);
 		node = solution.getNode();
 		System.out.println("pathCost: " + node.getPathCost().get());
 		System.out.println("Actions: " + solution.getActions());

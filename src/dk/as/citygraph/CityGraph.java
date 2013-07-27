@@ -14,6 +14,15 @@ public class CityGraph extends Graph<City, Double> {
 		return edge;
 	}
 
+	public CityGraph.Vertex getVertexByName(String name){
+		for (CityGraph.Vertex vert : getVertices().values()) {
+			if(vert.getData().getName().equals(name)){
+				return vert;
+			}
+		}
+		return null;
+	}
+
 	public static CityGraph romania() {
 		CityGraph graph = new CityGraph();
 		City arad_city = new City("Arad", 30, 150);
